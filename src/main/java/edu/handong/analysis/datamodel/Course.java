@@ -92,8 +92,8 @@ public class Course {
 		courseCode = line.trim().split(",")[4];
 		courseName = line.trim().split(",")[5];
 		courseCredit = line.trim().split(",")[6];
-		yearTaken = Integer.parseUnsignedInt(line.trim().split(",")[7]);
-		semesterCourseTaken = Integer.parseUnsignedInt(line.trim().split(",")[8]);
+		yearTaken = Integer.parseInt(line.split(",")[7].trim());
+		semesterCourseTaken = Integer.parseInt(line.split(",")[8].trim());
 
 	}
 }
