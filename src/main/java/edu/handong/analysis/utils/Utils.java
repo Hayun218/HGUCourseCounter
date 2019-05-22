@@ -19,9 +19,11 @@ public class Utils {
 			String line;
 			while ((line = br.readLine()) != null)
 				readfile.add(line);
-			
+			br.close();
+
 			if (removeHeader)
 				readfile.remove(0);
+
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -34,17 +36,18 @@ public class Utils {
 
 	public static void writeAFile(ArrayList<String> lines, String targetFileName) {
 		try {
-			File dest = null;
-			dest = new File(targetFileName);
+			File dest = new File(targetFileName);
 			BufferedWriter bw = new BufferedWriter(new FileWriter(dest));
-			if (!dest.exists()) dest.createNewFile();
-			for(String line : lines)
+			if (!dest.exists())
+				dest.createNewFile();
+			for (String line : lines) {
 				bw.write(line);
-			
+				bw.newLine();
+			}
+			bw.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
 
 	}
 
