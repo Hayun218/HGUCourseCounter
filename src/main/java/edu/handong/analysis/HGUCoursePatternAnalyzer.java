@@ -84,8 +84,6 @@ public class HGUCoursePatternAnalyzer {
 				student = new Student(keys.get(i));
 				student.addCourse(oneCourse);
 			}
-			System.out.println(keys.get(i) + oneCourse.getCourseName());
-			System.out.println(student.getSemestersByYearAndSemester());
 			stu.put(keys.get(i), student);
 			if (temp == Integer.parseInt(keys.get(i))) {
 				stu.put(keys.get(i), student);
@@ -110,26 +108,33 @@ public class HGUCoursePatternAnalyzer {
 	 * @return
 	 */
 	private ArrayList<String> countNumberOfCoursesTakenInEachSemester(Map<String, Student> sortedStudents) {
+
 		ArrayList<String> result = new ArrayList<String>();
-		int stuID = 1;
+		String stuID = "0001";
 		int NumCoursesTakenInTheSemester = 0;
-		int TotalNumberOfSemestersRegistered = 0;
-		
+
 		result.add("StudentID, TotalNumberOfSemestersRegistered, Semester, NumCoursesTakenInTheSemester");
 
-		for (int i = 0; i < sortedStudents.size(); i++) {
-			Student stu = sortedStudents.get(Integer.toString(stuID));
+		for (int i = 1; i <= sortedStudents.size(); i++) {
+			int TotalNumberOfSemestersRegistered = 0;
+			Student stu = sortedStudents.get(stuID);
 
-
-		//	TotalNumberOfSemestersRegistered = stu.getSemestersByYearAndSemester(); // 여기서어떻게 값을 가져오지..?
+			TotalNumberOfSemestersRegistered = stu.getSemestersByYearAndSemester().size();
 
 			for (int j = 1; j <= TotalNumberOfSemestersRegistered; j++) {
 				NumCoursesTakenInTheSemester = stu.getNumCourseInNthSementer(j);
-				result.add(
-						stuID + "," + TotalNumberOfSemestersRegistered + "," + j + "," + NumCoursesTakenInTheSemester);
+				result.add(i + "," + TotalNumberOfSemestersRegistered + "," + j + "," + NumCoursesTakenInTheSemester);
 			}
-			
-			stuID++;
+			if (i < 9) {
+				int ID = Integer.parseInt(stuID);
+				stuID = ("000" + Integer.toString(++ID));
+			} else if (i < 99) {
+				int ID = Integer.parseInt(stuID);
+				stuID = ("00" + Integer.toString(++ID));
+			} else if (i < 999) {
+				int ID = Integer.parseInt(stuID);
+				stuID = ("0" + Integer.toString(++ID));
+			}
 
 		}
 		return result;
