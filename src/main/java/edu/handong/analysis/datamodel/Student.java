@@ -2,7 +2,6 @@ package edu.handong.analysis.datamodel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 public class Student {
 
@@ -21,7 +20,7 @@ public class Student {
 
 	public HashMap<String, Integer> getSemestersByYearAndSemester() {
 
-		HashMap<String, Integer> semestersByYearAndSemester = new HashMap<String, Integer>();
+		semestersByYearAndSemester = new HashMap<String, Integer>();
 		String yearAndSem = "";
 		String temp = "";
 		int cnt = 1;

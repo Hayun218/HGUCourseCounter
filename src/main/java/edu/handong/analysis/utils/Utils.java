@@ -15,7 +15,11 @@ public class Utils {
 
 		ArrayList<String> readfile = new ArrayList<String>();
 
-		try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+		try {
+			File fileRead = new File(file);
+			if (!fileRead.exists())
+				throw new NotEnoughArgumentException("The file path does not exist. Please check your CLI argument!");
+			BufferedReader br = new BufferedReader(new FileReader(file));
 			String line;
 			while ((line = br.readLine()) != null)
 				readfile.add(line);
@@ -24,12 +28,18 @@ public class Utils {
 			if (removeHeader)
 				readfile.remove(0);
 
-		} catch (FileNotFoundException e) {
+		} catch (
+
+		FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (NotEnoughArgumentException e) {
+			// e.printStackTrace();
+			System.out.println(e.getMessage());
+			System.exit(0);
 		}
 		return readfile;
 	}

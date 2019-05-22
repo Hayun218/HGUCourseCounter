@@ -4,7 +4,7 @@ package edu.handong.analysis.utils;
 public class NotEnoughArgumentException extends Exception {
 
 	public NotEnoughArgumentException(String message) {
-		super("The file path does not exist. Please check your CLI argument!");
+		super(message);
 	}
 
 	public NotEnoughArgumentException() {
