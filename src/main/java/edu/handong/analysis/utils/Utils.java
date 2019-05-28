@@ -1,6 +1,5 @@
 package edu.handong.analysis.utils;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -8,22 +7,32 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 
 public class Utils {
 
-	public static ArrayList<String> getLines(String file, boolean removeHeader) {
+	public static ArrayList<CSVRecord> getLines(String file, boolean removeHeader) {
 
-		ArrayList<String> readfile = new ArrayList<String>();
+		ArrayList<CSVRecord> readfile = new ArrayList<CSVRecord>();
 
 		try {
 			File fileRead = new File(file);
 			if (!fileRead.exists())
 				throw new NotEnoughArgumentException("The file path does not exist. Please check your CLI argument!");
-			BufferedReader br = new BufferedReader(new FileReader(file));
-			String line;
-			while ((line = br.readLine()) != null)
-				readfile.add(line);
-			br.close();
+
+			FileReader fr = new FileReader(fileRead);
+
+			CSVParser parser = CSVParser.parse(fr, CSVFormat.EXCEL.withIgnoreSurroundingSpaces().withTrim());
+			Iterator<CSVRecord> iter = parser.iterator();
+
+			while (iter.hasNext()) {
+				readfile.add(iter.next());
+			}
+			fr.close();
 
 			if (removeHeader)
 				readfile.remove(0);
