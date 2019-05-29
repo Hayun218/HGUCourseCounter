@@ -1,5 +1,7 @@
 package edu.handong.analysis.datamodel;
 
+import java.util.Comparator;
+
 import org.apache.commons.csv.CSVRecord;
 
 public class Course {
@@ -98,4 +100,5 @@ public class Course {
 		semesterCourseTaken = Integer.parseInt(csvRecord.get(8));
 
 	}
+
 }
