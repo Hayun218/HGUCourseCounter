@@ -3,13 +3,17 @@ package edu.handong.analysis;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.csv.CSVRecord;
+
 import edu.handong.analysis.datamodel.Course;
 import edu.handong.analysis.datamodel.Student;
-import edu.handong.analysis.utils.NotEnoughArgumentException;
 import edu.handong.analysis.utils.Utils;
 
 public class HGUCoursePatternAnalyzer {
@@ -24,33 +28,27 @@ public class HGUCoursePatternAnalyzer {
 	 * @throws IOException
 	 * @throws FileNotFoundException
 	 */
-	public void run(String[] args) {
+	public void run(String input, String output, int startyear, int endyear, boolean flag, String coursesCode) {
+		String dataPath = input; // csv file to be analyzed
+		String resultPath = output; // the file path where the results are saved.
+		ArrayList<CSVRecord> lines = Utils.getLines(dataPath, true);
+		students = loadStudentCourseRecords(lines, startyear, endyear);
 
-		try {
-			// when there are not enough arguments from CLI, it throws the
-			// NotEnoughArgmentException which must be defined by you.
-			if (args.length < 2)
-				throw new NotEnoughArgumentException();
-		} catch (NotEnoughArgumentException e) {
-			System.out.println(e.getMessage());
-			System.exit(0);
-		}
-
-		String dataPath = args[0]; // csv file to be analyzed
-		String resultPath = args[1]; // the file path where the results are saved.
-		ArrayList<String> lines = Utils.getLines(dataPath, true);
-
-		students = loadStudentCourseRecords(lines);
-
-		// To sort HashMap entries by key values so that we can save the results by
-		// student ids in ascending order.
 		Map<String, Student> sortedStudents = new TreeMap<String, Student>(students);
 
-		// Generate result lines to be saved.
-		ArrayList<String> linesToBeSaved = countNumberOfCoursesTakenInEachSemester(sortedStudents);
+		if (flag) {
 
-		// Write a file (named like the value of resultPath) with linesTobeSaved.
-		Utils.writeAFile(linesToBeSaved, resultPath);
+			// Generate result lines to be saved.
+			ArrayList<String> linesToBeSaved = countNumberOfCoursesTakenInEachSemester(sortedStudents);
+			Utils.writeAFile(linesToBeSaved, resultPath);
+			// Write a file (named like the value of resultPath) with linesTobeSaved.
+
+		} else {
+
+			ArrayList<String> linesToBeSaved = ratioCourses(lines, coursesCode, startyear, endyear);
+			Utils.writeAFile(linesToBeSaved, resultPath);
+		}
+
 	}
 
 	/**
@@ -59,37 +57,45 @@ public class HGUCoursePatternAnalyzer {
 	 * Student instance have all the Course instances taken by the student.
 	 * 
 	 * @param lines
+	 * @param endyear
+	 * @param startyear
 	 * @return
 	 */
-	private HashMap<String, Student> loadStudentCourseRecords(ArrayList<String> lines) {
+	private HashMap<String, Student> loadStudentCourseRecords(ArrayList<CSVRecord> lines, int startyear, int endyear) {
 
 		HashMap<String, Student> stu = new HashMap<String, Student>();
 		ArrayList<String> keys = new ArrayList<String>();
+		Course oneCourse = null;
+		Student student = null;
 
-		Course oneCourse = new Course(lines.get(0));
-		Student student = new Student(oneCourse.getStudentId());
-		student.addCourse(oneCourse);
-		stu.put(oneCourse.getStudentId(), student);
-		keys.add(oneCourse.getStudentId());
+		String temp = "";
+		int idx = 0;
 
-		int temp = 1;
-		for (int i = 1; i < lines.size(); i++) {
-			oneCourse = new Course(lines.get(i));
-			keys.add(oneCourse.getStudentId());
-			if (keys.get(i - 1).equals(keys.get(i)))
-				student.addCourse(oneCourse);
-			else {
-				student = new Student(keys.get(i));
-				student.addCourse(oneCourse);
-			}
-			stu.put(keys.get(i), student);
-			if (temp == Integer.parseInt(keys.get(i))) {
-				stu.put(keys.get(i), student);
+		for (CSVRecord line : lines) {
+			oneCourse = new Course(line);
+
+			if (startyear <= oneCourse.getYearTaken() && oneCourse.getYearTaken() <= endyear) {
+				keys.add(oneCourse.getStudentId());
+				if (idx == 0) {
+					student = new Student(keys.get(0));
+					temp = keys.get(0);
+					stu.put(keys.get(0), student);
+					idx = 1;
+				} else {
+					if (keys.get(idx).equals(temp)) {
+						student.addCourse(oneCourse);
+					} else {
+						student = new Student(oneCourse.getStudentId());
+						student.addCourse(oneCourse);
+						temp = keys.get(idx);
+					}
+					stu.put(keys.get(idx), student);
+					idx++;
+				}
 			} else
-				temp++;
+				continue;
 		}
 		return stu;
-
 	}
 
 	/**
@@ -108,33 +114,121 @@ public class HGUCoursePatternAnalyzer {
 	private ArrayList<String> countNumberOfCoursesTakenInEachSemester(Map<String, Student> sortedStudents) {
 
 		ArrayList<String> result = new ArrayList<String>();
-		String stuID = "0001";
+		result.add("StudentID, TotalNumberOfSemestersRegistered, Semester, NumCoursesTakenInTheSemester");
 		int NumCoursesTakenInTheSemester = 0;
 
-		result.add("StudentID, TotalNumberOfSemestersRegistered, Semester, NumCoursesTakenInTheSemester");
-
-		for (int i = 1; i <= sortedStudents.size(); i++) {
+		for (String key : sortedStudents.keySet()) {
 			int TotalNumberOfSemestersRegistered = 0;
-			Student stu = sortedStudents.get(stuID);
+			String stuId = key;
+			Student stu = sortedStudents.get(stuId);
 
 			TotalNumberOfSemestersRegistered = stu.getSemestersByYearAndSemester().size();
 
-			for (int j = 1; j <= TotalNumberOfSemestersRegistered; j++) {
-				NumCoursesTakenInTheSemester = stu.getNumCourseInNthSementer(j);
-				result.add(i + "," + TotalNumberOfSemestersRegistered + "," + j + "," + NumCoursesTakenInTheSemester);
-			}
-			if (i < 9) {
-				int ID = Integer.parseInt(stuID);
-				stuID = ("000" + Integer.toString(++ID));
-			} else if (i < 99) {
-				int ID = Integer.parseInt(stuID);
-				stuID = ("00" + Integer.toString(++ID));
-			} else if (i < 999) {
-				int ID = Integer.parseInt(stuID);
-				stuID = ("0" + Integer.toString(++ID));
-			}
+			for (int i = 1; i <= TotalNumberOfSemestersRegistered; i++) {
+				NumCoursesTakenInTheSemester = stu.getNumCourseInNthSementer(i);
+				result.add(
+						stuId + "," + TotalNumberOfSemestersRegistered + "," + i + "," + NumCoursesTakenInTheSemester);
 
+			}
 		}
 		return result;
 	}
+
+	class AscendingObj implements Comparator<Course> {
+
+		@Override
+		public int compare(Course o1, Course o2) {
+			String yearAndSem1 = o1.getYearTaken() + "-" + o1.getSemesterCourseTaken();
+			String yearAndSem2 = o2.getYearTaken() + "-" + o2.getSemesterCourseTaken();
+
+			return yearAndSem1.compareTo(yearAndSem2);
+		}
+	}
+
+	private ArrayList<String> ratioCourses(ArrayList<CSVRecord> lines, String courseCode, int startyear, int endyear) {
+		ArrayList<String> printLine = new ArrayList<String>();
+		HashMap<String, Integer> totalNumberOfStu = new HashMap<String, Integer>();
+		HashMap<String, Integer> specificNumberOfStu = new HashMap<String, Integer>();
+
+		ArrayList<Course> specificCourses = new ArrayList<Course>();
+		ArrayList<Course> allCourses = new ArrayList<Course>();
+		String CourseName = null;
+
+		for (CSVRecord line : lines) {
+			Course oneCourse = new Course(line);
+			if (startyear <= oneCourse.getYearTaken() && endyear >= oneCourse.getYearTaken()) {
+				allCourses.add(oneCourse);
+				if (oneCourse.getCourseCode().equals(courseCode)) {
+					CourseName = oneCourse.getCourseName();
+					specificCourses.add(oneCourse);
+				}
+			} else
+				continue;
+		}
+
+		AscendingObj ascending = new AscendingObj();
+		Collections.sort(allCourses, ascending);
+		Collections.sort(specificCourses, ascending);
+
+		String tempstuID = null;
+		String yearAndSem = null;
+		String stuID = null;
+		int numOfSpecificStu = 1;
+		int numOfTotal = 1;
+		for (Course all : allCourses) {
+			yearAndSem = all.getYearTaken() + "-" + all.getSemesterCourseTaken();
+			stuID = all.getStudentId();
+
+			if (totalNumberOfStu.size() == 0) {
+				totalNumberOfStu.put(yearAndSem, numOfTotal);
+				tempstuID = stuID;
+				continue;
+			}
+			if (tempstuID.equals(stuID))
+				continue;
+			else {
+				numOfTotal = totalNumberOfStu.containsKey(yearAndSem) ? totalNumberOfStu.get(yearAndSem) : 0;
+				totalNumberOfStu.put(yearAndSem, numOfTotal + 1);
+				tempstuID = stuID;
+			}
+
+		}
+
+		for (Course specificStu : specificCourses) {
+			String yearAndSem1 = specificStu.getYearTaken() + "-" + specificStu.getSemesterCourseTaken();
+			if (specificNumberOfStu.size() == 0) {
+				specificNumberOfStu.put(yearAndSem1, numOfSpecificStu);
+				continue;
+			}
+
+			numOfSpecificStu = specificNumberOfStu.containsKey(yearAndSem1) ? specificNumberOfStu.get(yearAndSem1) : 0;
+			specificNumberOfStu.put(yearAndSem1, numOfSpecificStu + 1);
+		}
+
+		float ratio = 0;
+		printLine.add("Year,Semester,CouseCode, CourseName,TotalStudents,StudentsTaken,Rate");
+		Map<String, Integer> sortedAll = new TreeMap<String, Integer>(totalNumberOfStu);
+		Map<String, Integer> sortedSome = new TreeMap<String, Integer>(specificNumberOfStu);
+
+		for (String str1 : sortedAll.keySet()) {
+			boolean check = false;
+			String[] yearAndSemester = str1.split("-");
+			for (String str2 : sortedSome.keySet()) {
+				if (str1.equals(str2)) {
+					check = true;
+					ratio = ((float) sortedSome.get(str2) / (float) totalNumberOfStu.get(str1)) * 1000;
+					ratio = (Math.round(ratio));
+					ratio = ratio/10;
+					printLine.add(yearAndSemester[0] + "," + yearAndSemester[1] + "," + courseCode + "," + CourseName
+							+ "," + sortedAll.get(str1) + "," + sortedSome.get(str2) + "," + ratio + "%");
+				}
+			}
+			if (!check) {
+				printLine.add(yearAndSemester[0] + "," + yearAndSemester[1] + "," + courseCode + "," + CourseName + ","
+						+ sortedAll.get(str1) + "," + "0" + "," + " 0.0%");
+			}
+		}
+		return printLine;
+	}
+
 }
