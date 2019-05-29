@@ -8,7 +8,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
 import edu.handong.analysis.HGUCoursePatternAnalyzer;
-import edu.handong.analysis.HGUCoursePatternAnalyzer2;
 
 public class BuildOptions {
 	String input;
