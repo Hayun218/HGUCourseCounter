@@ -18,7 +18,6 @@ public class Utils {
 	public static ArrayList<CSVRecord> getLines(String file, boolean removeHeader) {
 
 		ArrayList<CSVRecord> readfile = new ArrayList<CSVRecord>();
-
 		try {
 			File fileRead = new File(file);
 			if (!fileRead.exists())
